@@ -1,0 +1,240 @@
+/* 
+2026FA-ENGR-2304-8XXXX-CRUZ-JESUS-P07
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <time.h>
+
+#if defined(_WIN32) || defined(_WIN64)
+    #include <windows.h>
+    void pause_seconds(int seconds) {
+        Sleep(seconds * 1000);
+    }
+#else
+    #include <unistd.h>
+    void pause_seconds(int seconds) {
+        sleep(seconds);
+    }
+#endif
+
+// Function Prototypes
+void initialize_board(char board[3][3]);
+void print_board(char board[3][3]);
+bool check_winner(char board[3][3], char mark);
+bool is_board_full(char board[3][3]);
+void get_player_move(char board[3][3], char player_mark, int player_num);
+void get_computer_move(char board[3][3], char computer_mark);
+
+int main() {
+    srand((unsigned int)time(NULL));
+    char play_again = 'y';
+
+    while (play_again == 'y' || play_again == 'Y') {
+        char board[3][3];
+        initialize_board(board);
+
+        int mode = 0;
+        printf("=========================================\n");
+        printf("    TIC-TAC-TOE ASSIGNMENT 07 (P07)      \n");
+        printf("=========================================\n");
+        printf("Select Game Mode:\n");
+        printf("  1. 1 Player (vs. Computer)\n");
+        printf("  2. 2 Players\n");
+        printf("Enter choice (1 or 2): ");
+        while (scanf("%d", &mode) != 1 || (mode != 1 && mode != 2)) {
+            while (getchar() != '\n'); // clear buffer
+            printf("Invalid choice. Please enter 1 or 2: ");
+        }
+
+        char p1_mark = 'X', p2_mark = 'O';
+        char choice;
+        printf("\nDo you want to play as X or O? (X goes first or second depending on random spin): ");
+        scanf(" %c", &choice);
+        if (choice == 'o' || choice == 'O') {
+            p1_mark = 'O';
+            p2_mark = 'X';
+        } else {
+            p1_mark = 'X';
+            p2_mark = 'O';
+        }
+
+        // Randomly determine who goes first
+        int turn = rand() % 2; // 0: Player 1, 1: Player 2 / Computer
+        printf("\nCoin toss deciding who goes first...\n");
+        pause_seconds(1);
+
+        if (turn == 0) {
+            printf("Player 1 (%c) won the toss and moves first!\n", p1_mark);
+        } else {
+            if (mode == 1) {
+                printf("Computer (%c) won the toss and moves first!\n", p2_mark);
+            } else {
+                printf("Player 2 (%c) won the toss and moves first!\n", p2_mark);
+            }
+        }
+
+        bool game_over = false;
+        char winner_mark = ' ';
+
+        while (!game_over) {
+            print_board(board);
+
+            if (turn == 0) {
+                // Player 1's turn
+                get_player_move(board, p1_mark, 1);
+                if (check_winner(board, p1_mark)) {
+                    winner_mark = p1_mark;
+                    game_over = true;
+                }
+            } else {
+                // Player 2 or Computer turn
+                if (mode == 1) {
+                    printf("\nComputer is thinking...\n");
+                    pause_seconds(1); // slight delay as required
+                    get_computer_move(board, p2_mark);
+                    if (check_winner(board, p2_mark)) {
+                        winner_mark = p2_mark;
+                        game_over = true;
+                    }
+                } else {
+                    get_player_move(board, p2_mark, 2);
+                    if (check_winner(board, p2_mark)) {
+                        winner_mark = p2_mark;
+                        game_over = true;
+                    }
+                }
+            }
+
+            if (!game_over && is_board_full(board)) {
+                game_over = true;
+                winner_mark = 'D'; // Draw
+            }
+
+            // Switch turn
+            turn = 1 - turn;
+        }
+
+        // Display final board state
+        print_board(board);
+
+        // Display Results
+        if (winner_mark == 'D') {
+            printf("\n--- Game Over: It's a Draw! ---\n");
+        } else if (winner_mark == p1_mark) {
+            printf("\n--- Game Over: Player 1 (%c) Wins! ---\n", p1_mark);
+        } else {
+            if (mode == 1) {
+                printf("\n--- Game Over: Computer (%c) Wins! ---\n", p2_mark);
+            } else {
+                printf("\n--- Game Over: Player 2 (%c) Wins! ---\n", p2_mark);
+            }
+        }
+
+        printf("\nWould you like to play again? (y/n): ");
+        scanf(" %c", &play_again);
+        printf("\n\n");
+    }
+
+    printf("Thank you for playing!\n");
+    return 0;
+}
+
+// Initialize board with position numbers 1-9 for easy input selection
+void initialize_board(char board[3][3]) {
+    char count = '1';
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            board[i][j] = count++;
+        }
+    }
+}
+
+// Display the formatted board
+void print_board(char board[3][3]) {
+    printf("\n");
+    printf(" %c | %c | %c \n", board[0][0], board[0][1], board[0][2]);
+    printf("---|---|---\n");
+    printf(" %c | %c | %c \n", board[1][0], board[1][1], board[1][2]);
+    printf("---|---|---\n");
+    printf(" %c | %c | %c \n", board[2][0], board[2][1], board[2][2]);
+    printf("\n");
+}
+
+// Check if a specific mark has achieved a winning line
+bool check_winner(char board[3][3], char mark) {
+    // Check rows and columns
+    for (int i = 0; i < 3; i++) {
+        if ((board[i][0] == mark && board[i][1] == mark && board[i][2] == mark) ||
+            (board[0][i] == mark && board[1][i] == mark && board[2][i] == mark)) {
+            return true;
+        }
+    }
+    // Check diagonals
+    if ((board[0][0] == mark && board[1][1] == mark && board[2][2] == mark) ||
+        (board[0][2] == mark && board[1][1] == mark && board[2][3 - 1] == mark)) {
+        return true;
+    }
+    return false;
+}
+
+// Check if all spots on the board are taken
+bool is_board_full(char board[3][3]) {
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (board[i][j] >= '1' && board[i][j] <= '9') {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+// Prompt human player for move input and update board
+void get_player_move(char board[3][3], char player_mark, int player_num) {
+    int choice;
+    int row, col;
+    bool valid = false;
+
+    while (!valid) {
+        printf("Player %d (%c), enter a position (1-9): ", player_num, player_mark);
+        if (scanf("%d", &choice) == 1 && choice >= 1 && choice <= 9) {
+            row = (choice - 1) / 3;
+            col = (choice - 1) % 3;
+
+            if (board[row][col] != 'X' && board[row][col] != 'O') {
+                board[row][col] = player_mark;
+                valid = true;
+            } else {
+                printf("That position is already taken! Try again.\n");
+            }
+        } else {
+            while (getchar() != '\n'); // Clear invalid input from stream
+            printf("Invalid choice! Please enter a number between 1 and 9.\n");
+        }
+    }
+}
+
+// Computer automated move selector
+void get_computer_move(char board[3][3], char computer_mark) {
+    int available_spots[9];
+    int count = 0;
+
+    // Collect available numbered spots
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (board[i][j] >= '1' && board[i][j] <= '9') {
+                available_spots[count++] = (i * 3) + j;
+            }
+        }
+    }
+
+    if (count > 0) {
+        int random_index = rand() % count;
+        int spot = available_spots[random_index];
+        int row = spot / 3;
+        int col = spot % 3;
+        board[row][col] = computer_mark;
+    }
+}
